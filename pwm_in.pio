@@ -1,0 +1,26 @@
+.program pwm_in
+
+.wrap_target
+    ; 1. Wait for pin to go LOW (to avoid starting in middle of pulse)
+    wait 0 pin 0
+
+    ; 2. Wait for pin to go HIGH (Start of Pulse)
+    wait 1 pin 0
+
+    ; 3. Initialize Timer
+    set x, 0            ; Set X to 0
+    mov x, !x           ; Invert X to make it 0xFFFFFFFF (Max 32-bit value)
+
+    ; 4. Measurement Loop (2 cycles per loop = 1us)
+measure_loop:
+    jmp pin continue_counting   ; If pin is High, keep counting
+    jmp pulse_finished          ; If pin drops Low, we are done
+
+continue_counting:
+    jmp x-- measure_loop        ; Decrement X and continue
+
+    ; 5. Push Data
+pulse_finished:
+    mov isr, x          ; Move result to ISR
+    push noblock        ; Push to FIFO
+.wrap
